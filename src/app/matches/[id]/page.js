@@ -93,6 +93,21 @@ export default function MatchDetailsPage({ params }) {
     );
   }
 
+  // Check if the match is in the past
+  const now = new Date();
+  const matchTime = new Date(match.startTimestamp * 1000);
+  const isPastMatch = matchTime < now;
+
+  // Normalize status values from different API formats
+  const normalizedStatus = 
+    // Handle various "finished" status values
+    match.status === 'finished' || match.status === 'ended' || match.status === 'completed' || 
+    (isPastMatch && match.status !== 'inprogress' && match.status !== 'canceled') ? 'finished' :
+    // Handle various "in progress" status values
+    match.status === 'inprogress' || match.status === 'live' || match.status === 'ongoing' ? 'inprogress' :
+    // Default to upcoming
+    'upcoming';
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -109,24 +124,24 @@ export default function MatchDetailsPage({ params }) {
           {/* Match header */}
           <div className="bg-primary text-primary-foreground p-8">
             <h1 className="text-2xl font-bold text-center mb-6 animate-fadeIn">
-              {match.homeTeam.name} vs {match.awayTeam.name}
+              {match.homeTeam?.name || 'Home Team'} vs {match.awayTeam?.name || 'Away Team'}
             </h1>
             <div className="flex justify-center items-center text-4xl font-bold animate-fadeIn" style={{ animationDelay: '0.1s' }}>
               <div className="text-center w-1/3 transition-all hover:scale-110">
-                <p>{match.homeTeam.name}</p>
+                <p>{match.homeTeam?.name || 'Home Team'}</p>
               </div>
               <div className="text-center w-1/3">
-                {match.status === 'finished' || match.status === 'inprogress' ? (
-                  <p className={match.status === 'inprogress' ? 'animate-pulse' : ''}>
-                    {match.homeScore.current} - {match.awayScore.current}
-                    {match.status === 'inprogress' && <span className="ml-2 text-sm">LIVE</span>}
+                {normalizedStatus === 'finished' || normalizedStatus === 'inprogress' ? (
+                  <p className={normalizedStatus === 'inprogress' ? 'animate-pulse' : ''}>
+                    {match.homeScore?.current || 0} - {match.awayScore?.current || 0}
+                    {normalizedStatus === 'inprogress' && <span className="ml-2 text-sm">LIVE</span>}
                   </p>
                 ) : (
                   <p>vs</p>
                 )}
               </div>
               <div className="text-center w-1/3 transition-all hover:scale-110">
-                <p>{match.awayTeam.name}</p>
+                <p>{match.awayTeam?.name || 'Away Team'}</p>
               </div>
             </div>
           </div>
@@ -157,13 +172,13 @@ export default function MatchDetailsPage({ params }) {
                   <p className="flex justify-between items-center transition-all hover:bg-muted p-2 rounded-md">
                     <span className="font-medium text-muted-foreground">Status:</span> 
                     <span className={
-                      match.status === 'inprogress' 
+                      normalizedStatus === 'inprogress' 
                         ? 'text-green-600 font-medium' 
-                        : match.status === 'finished' 
+                        : normalizedStatus === 'finished' 
                           ? 'text-blue-600 font-medium' 
                           : 'text-orange-600 font-medium'
                     }>
-                      {match.status === 'finished' ? 'Completed' : match.status === 'inprogress' ? 'In Progress' : 'Upcoming'}
+                      {normalizedStatus === 'finished' ? 'Completed' : normalizedStatus === 'inprogress' ? 'In Progress' : 'Upcoming'}
                     </span>
                   </p>
                 </div>
@@ -186,8 +201,7 @@ export default function MatchDetailsPage({ params }) {
                       )}
                     </div>
                     <div>
-                      <p className="font-semibold text-lg">{match.manOfTheMatch.name}</p>
-                      <p className="text-muted-foreground">{match.manOfTheMatch.team}</p>
+                      <p className="font-semibold text-lg">{match.manOfTheMatch?.name || 'Player'}</p>
                     </div>
                   </div>
                 ) : (
@@ -213,10 +227,10 @@ export default function MatchDetailsPage({ params }) {
                     <tbody className="bg-card divide-y divide-border">
                       {match.events.map((event, index) => (
                         <tr key={index} className="transition-colors hover:bg-muted/50">
-                          <td className="px-6 py-4 whitespace-nowrap font-medium">{event.minute}'</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{event.type}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{event.player}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{event.team}</td>
+                          <td className="px-6 py-4 whitespace-nowrap font-medium">{event.minute || '0'}'</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{event.type || 'Unknown'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{event.player || 'Unknown'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{event.team || 'Unknown'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -232,14 +246,14 @@ export default function MatchDetailsPage({ params }) {
                 <div className="space-y-6 mt-4">
                   {Object.entries(match.statistics).map(([key, value], index) => (
                     <div key={key} className="flex items-center group">
-                      <div className="w-1/3 text-right pr-4 font-medium transition-all group-hover:text-primary">{value.home}</div>
+                      <div className="w-1/3 text-right pr-4 font-medium transition-all group-hover:text-primary">{value?.home || 0}</div>
                       <div className="w-1/3">
                         <div className="text-center text-sm text-muted-foreground mb-2">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
                         <div className="h-3 bg-secondary rounded-full overflow-hidden shadow-sm">
                           <div 
                             className="h-full bg-primary transition-all duration-1000" 
                             style={{ 
-                              width: `${(value.home / (value.home + value.away)) * 100}%`,
+                              width: `${((value?.home || 0) / ((value?.home || 0) + (value?.away || 0) || 1)) * 100}%`,
                               float: 'left',
                               transitionDelay: `${index * 0.1}s`
                             }}
@@ -247,14 +261,14 @@ export default function MatchDetailsPage({ params }) {
                           <div 
                             className="h-full bg-destructive transition-all duration-1000" 
                             style={{ 
-                              width: `${(value.away / (value.home + value.away)) * 100}%`,
+                              width: `${((value?.away || 0) / ((value?.home || 0) + (value?.away || 0) || 1)) * 100}%`,
                               float: 'right',
                               transitionDelay: `${index * 0.1}s`
                             }}
                           ></div>
                         </div>
                       </div>
-                      <div className="w-1/3 pl-4 font-medium transition-all group-hover:text-destructive">{value.away}</div>
+                      <div className="w-1/3 pl-4 font-medium transition-all group-hover:text-destructive">{value?.away || 0}</div>
                     </div>
                   ))}
                 </div>

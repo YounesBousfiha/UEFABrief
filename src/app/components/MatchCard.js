@@ -18,15 +18,30 @@ export default function MatchCard({ match }) {
   const formattedDate = matchDate.toLocaleDateString();
   const formattedTime = matchDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  // Determine score display based on match status
-  const scoreDisplay = status === 'finished' || status === 'inprogress'
-    ? `${homeScore.current} - ${awayScore.current}${status === 'inprogress' ? ' (Live)' : ''}`
+  // Check if the match is in the past
+  const now = new Date();
+  const matchTime = new Date(startTimestamp * 1000);
+  const isPastMatch = matchTime < now;
+
+  // Normalize status values from different API formats
+  const normalizedStatus = 
+    // Handle various "finished" status values
+    status === 'finished' || status === 'ended' || status === 'completed' || 
+    (isPastMatch && status !== 'inprogress' && status !== 'canceled') ? 'finished' :
+    // Handle various "in progress" status values
+    status === 'inprogress' || status === 'live' || status === 'ongoing' ? 'inprogress' :
+    // Default to upcoming
+    'upcoming';
+
+  // Determine score display based on normalized status
+  const scoreDisplay = normalizedStatus === 'finished' || normalizedStatus === 'inprogress'
+    ? `${homeScore.current} - ${awayScore.current}${normalizedStatus === 'inprogress' ? ' (Live)' : ''}`
     : 'Upcoming';
 
-  // Determine status color
-  const statusColor = status === 'inprogress' 
+  // Determine status color based on normalized status
+  const statusColor = normalizedStatus === 'inprogress' 
     ? 'text-green-600' 
-    : status === 'finished' 
+    : normalizedStatus === 'finished' 
       ? 'text-blue-600' 
       : 'text-orange-600';
 
@@ -62,7 +77,7 @@ export default function MatchCard({ match }) {
         <CardFooter className="pt-2 border-t text-xs text-muted-foreground">
           <div className="w-full flex justify-end">
             <span className={`${statusColor} font-medium`}>
-              {status === 'inprogress' ? 'Live' : status === 'finished' ? 'Completed' : 'Scheduled'}
+              {normalizedStatus === 'inprogress' ? 'Live' : normalizedStatus === 'finished' ? 'Completed' : 'Scheduled'}
             </span>
           </div>
         </CardFooter>

@@ -12,17 +12,14 @@ const API_BASE_URL = 'https://api.sofascore.com/api/v1';
  */
 export const fetchMatches = async (date = '2025-04-15') => {
   try {
-    // In a real application, we would make an actual API call
-    // const response = await fetch(`${API_BASE_URL}/sport/football/scheduled-events/${date}`);
-    // if (!response.ok) throw new Error('Failed to fetch matches');
-    // const data = await response.json();
-    // return data.events;
-    
-    // For development purposes, we'll return mock data
-    return getMockMatches();
+    // Make the actual API call
+    const response = await fetch(`${API_BASE_URL}/sport/football/scheduled-events/${date}`);
+    if (!response.ok) throw new Error('Failed to fetch matches');
+    const data = await response.json();
+    return data.events;
   } catch (error) {
     console.error('Error fetching matches:', error);
-    throw error;
+    throw new Error('Failed to fetch matches: ' + error.message);
   }
 };
 
@@ -33,290 +30,120 @@ export const fetchMatches = async (date = '2025-04-15') => {
  */
 export const fetchMatchDetails = async (matchId) => {
   try {
-    // In a real application, we would make an actual API call
-    // const response = await fetch(`${API_BASE_URL}/event/${matchId}`);
-    // if (!response.ok) throw new Error('Failed to fetch match details');
-    // const data = await response.json();
-    // return data;
-    
-    // For development purposes, we'll return mock data
-    return getMockMatchDetails(matchId);
+    // Make the actual API call
+    const response = await fetch(`${API_BASE_URL}/event/${matchId}`);
+    if (!response.ok) throw new Error('Failed to fetch match details');
+    const data = await response.json();
+
+    // Check if the API returned a valid match
+    if (!data || !data.event) {
+      console.warn('Match not found in API response');
+      return null;
+    }
+
+    // Create a data object with the API response
+    const matchData = { ...data.event };
+
+    // Try to fetch additional data like lineups and incidents
+    try {
+      const lineupResponse = await fetch(`${API_BASE_URL}/event/${matchId}/lineups`);
+      if (lineupResponse.ok) {
+        const lineupData = await lineupResponse.json();
+        matchData.lineups = lineupData;
+      }
+    } catch (lineupError) {
+      console.warn('Failed to fetch lineups:', lineupError);
+    }
+
+    try {
+      const incidentsResponse = await fetch(`${API_BASE_URL}/event/${matchId}/incidents`);
+      if (incidentsResponse.ok) {
+        const incidentsData = await incidentsResponse.json();
+        matchData.incidents = incidentsData;
+      }
+    } catch (incidentsError) {
+      console.warn('Failed to fetch incidents:', incidentsError);
+    }
+
+    // Determine man of the match based on available data
+    matchData.manOfTheMatch = determineManOfTheMatch(matchData);
+
+    return matchData;
   } catch (error) {
     console.error('Error fetching match details:', error);
-    throw error;
+    throw new Error('Failed to fetch match details: ' + error.message);
   }
 };
 
 /**
- * Returns mock match data for development
- * @returns {Array} - Array of mock match data
+ * Determines the man of the match based on available data
+ * @param {Object} matchData - Match data from the API
+ * @returns {Object|null} - Man of the match data or null if not available
  */
-const getMockMatches = () => {
-  return [
-    {
-      id: 11111,
-      startTimestamp: 1713290400, // April 15, 2025, 20:00 UTC
-      status: 'finished',
-      homeTeam: {
-        id: 2817,
-        name: 'Real Madrid',
-        shortName: 'Real Madrid',
-        slug: 'real-madrid',
-      },
-      awayTeam: {
-        id: 2672,
-        name: 'Bayern Munich',
-        shortName: 'Bayern',
-        slug: 'bayern-munich',
-      },
-      homeScore: {
-        current: 2,
-        display: 2,
-        period1: 1,
-        period2: 1,
-      },
-      awayScore: {
-        current: 1,
-        display: 1,
-        period1: 0,
-        period2: 1,
-      },
-      tournament: {
-        id: 7,
-        name: 'UEFA Champions League',
-        slug: 'uefa-champions-league',
-      },
-      venue: {
-        id: 1456,
-        name: 'Santiago Bernabéu',
-        city: 'Madrid',
-      },
-    },
-    {
-      id: 22222,
-      startTimestamp: 1713290400, // April 15, 2025, 20:00 UTC
-      status: 'finished',
-      homeTeam: {
-        id: 2697,
-        name: 'Manchester City',
-        shortName: 'Man City',
-        slug: 'manchester-city',
-      },
-      awayTeam: {
-        id: 2818,
-        name: 'Barcelona',
-        shortName: 'Barcelona',
-        slug: 'barcelona',
-      },
-      homeScore: {
-        current: 3,
-        display: 3,
-        period1: 2,
-        period2: 1,
-      },
-      awayScore: {
-        current: 2,
-        display: 2,
-        period1: 1,
-        period2: 1,
-      },
-      tournament: {
-        id: 7,
-        name: 'UEFA Champions League',
-        slug: 'uefa-champions-league',
-      },
-      venue: {
-        id: 1234,
-        name: 'Etihad Stadium',
-        city: 'Manchester',
-      },
-    },
-    {
-      id: 33333,
-      startTimestamp: 1713376800, // April 16, 2025, 20:00 UTC
-      status: 'finished',
-      homeTeam: {
-        id: 2702,
-        name: 'Liverpool',
-        shortName: 'Liverpool',
-        slug: 'liverpool',
-      },
-      awayTeam: {
-        id: 2693,
-        name: 'Paris Saint-Germain',
-        shortName: 'PSG',
-        slug: 'paris-saint-germain',
-      },
-      homeScore: {
-        current: 2,
-        display: 2,
-        period1: 1,
-        period2: 1,
-      },
-      awayScore: {
-        current: 0,
-        display: 0,
-        period1: 0,
-        period2: 0,
-      },
-      tournament: {
-        id: 7,
-        name: 'UEFA Champions League',
-        slug: 'uefa-champions-league',
-      },
-      venue: {
-        id: 550,
-        name: 'Anfield',
-        city: 'Liverpool',
-      },
-    },
-    {
-      id: 44444,
-      startTimestamp: 1713376800, // April 16, 2025, 20:00 UTC
-      status: 'finished',
-      homeTeam: {
-        id: 2692,
-        name: 'Juventus',
-        shortName: 'Juventus',
-        slug: 'juventus',
-      },
-      awayTeam: {
-        id: 2679,
-        name: 'Borussia Dortmund',
-        shortName: 'Dortmund',
-        slug: 'borussia-dortmund',
-      },
-      homeScore: {
-        current: 1,
-        display: 1,
-        period1: 0,
-        period2: 1,
-      },
-      awayScore: {
-        current: 1,
-        display: 1,
-        period1: 1,
-        period2: 0,
-      },
-      tournament: {
-        id: 7,
-        name: 'UEFA Champions League',
-        slug: 'uefa-champions-league',
-      },
-      venue: {
-        id: 1350,
-        name: 'Allianz Stadium',
-        city: 'Turin',
-      },
-    },
-  ];
+const determineManOfTheMatch = (matchData) => {
+  // If the match is not finished, return null
+  if (matchData.status?.type !== 'finished' && 
+      matchData.status?.description !== 'Finished' && 
+      matchData.status?.code !== 100) {
+    return null;
+  }
+
+  // Try to find the player with the most goals
+  const goalScorers = {};
+  const playerTeams = {};
+
+  // Check if we have incidents data
+  if (matchData.incidents && Array.isArray(matchData.incidents.incidents)) {
+    matchData.incidents.incidents.forEach(incident => {
+      if (incident.incidentType === 'goal' || incident.incidentType === 'ownGoal') {
+        const playerId = incident.player?.id;
+        if (playerId) {
+          goalScorers[playerId] = (goalScorers[playerId] || 0) + 1;
+          playerTeams[playerId] = {
+            name: incident.player?.name || 'Unknown Player',
+            team: incident.team?.name || 'Unknown Team',
+            imageUrl: `https://api.sofascore.app/api/v1/player/${playerId}/image`
+          };
+        }
+      }
+    });
+  }
+
+  // If no goal scorers found, check if we have events data
+  if (Object.keys(goalScorers).length === 0 && matchData.events && Array.isArray(matchData.events)) {
+    matchData.events.forEach(event => {
+      if (event.type === 'Goal') {
+        const playerName = event.player;
+        if (playerName) {
+          // Since we don't have player IDs, use names as keys
+          goalScorers[playerName] = (goalScorers[playerName] || 0) + 1;
+          playerTeams[playerName] = {
+            name: playerName,
+            team: event.team || 'Unknown Team'
+          };
+        }
+      }
+    });
+  }
+
+  // Find the player with the most goals
+  let bestPlayer = null;
+  let maxGoals = 0;
+
+  Object.keys(goalScorers).forEach(playerId => {
+    if (goalScorers[playerId] > maxGoals) {
+      maxGoals = goalScorers[playerId];
+      bestPlayer = playerTeams[playerId];
+    }
+  });
+
+  // If we found a best player, return their data
+  if (bestPlayer) {
+    return bestPlayer;
+  }
+
+  // If no goal scorers found, return null
+  return null;
 };
 
-/**
- * Returns mock match details for development
- * @param {number} matchId - The ID of the match
- * @returns {Object} - Mock match details
- */
-const getMockMatchDetails = (matchId) => {
-  const matches = getMockMatches();
-  const match = matches.find(m => m.id === matchId);
-  
-  if (!match) {
-    throw new Error('Match not found');
-  }
-  
-  // Add additional details to the match
-  return {
-    ...match,
-    referee: {
-      id: 12345,
-      name: 'Anthony Taylor',
-      nationality: 'England',
-    },
-    events: [
-      {
-        id: 1,
-        minute: 23,
-        type: 'Goal',
-        player: match.id === 11111 ? 'Vinicius Jr.' : 
-                match.id === 22222 ? 'Kevin De Bruyne' : 
-                match.id === 33333 ? 'Mohamed Salah' : 'Federico Chiesa',
-        team: match.homeTeam.name,
-      },
-      {
-        id: 2,
-        minute: 45,
-        type: 'Yellow Card',
-        player: match.id === 11111 ? 'Joshua Kimmich' : 
-                match.id === 22222 ? 'Pedri' : 
-                match.id === 33333 ? 'Marquinhos' : 'Marco Reus',
-        team: match.awayTeam.name,
-      },
-      {
-        id: 3,
-        minute: 67,
-        type: 'Goal',
-        player: match.id === 11111 ? 'Jude Bellingham' : 
-                match.id === 22222 ? 'Erling Haaland' : 
-                match.id === 33333 ? 'Trent Alexander-Arnold' : 'Dusan Vlahovic',
-        team: match.homeTeam.name,
-      },
-      {
-        id: 4,
-        minute: 78,
-        type: 'Goal',
-        player: match.id === 11111 ? 'Harry Kane' : 
-                match.id === 22222 ? 'Robert Lewandowski' : 
-                match.id === 33333 ? 'No goal' : 'Julian Brandt',
-        team: match.awayTeam.name,
-      },
-      {
-        id: 5,
-        minute: 85,
-        type: 'Substitution',
-        player: match.id === 11111 ? 'Luka Modric (in) / Toni Kroos (out)' : 
-                match.id === 22222 ? 'Phil Foden (in) / Jack Grealish (out)' : 
-                match.id === 33333 ? 'Darwin Nunez (in) / Luis Diaz (out)' : 'Weston McKennie (in) / Manuel Locatelli (out)',
-        team: match.homeTeam.name,
-      },
-    ].filter(event => !(event.type === 'Goal' && event.player === 'No goal')),
-    statistics: {
-      possessionPercentage: {
-        home: match.id === 11111 ? 55 : match.id === 22222 ? 60 : match.id === 33333 ? 65 : 48,
-        away: match.id === 11111 ? 45 : match.id === 22222 ? 40 : match.id === 33333 ? 35 : 52,
-      },
-      shots: {
-        home: match.id === 11111 ? 15 : match.id === 22222 ? 18 : match.id === 33333 ? 14 : 10,
-        away: match.id === 11111 ? 10 : match.id === 22222 ? 12 : match.id === 33333 ? 5 : 11,
-      },
-      shotsOnTarget: {
-        home: match.id === 11111 ? 7 : match.id === 22222 ? 9 : match.id === 33333 ? 6 : 4,
-        away: match.id === 11111 ? 4 : match.id === 22222 ? 5 : match.id === 33333 ? 1 : 3,
-      },
-      corners: {
-        home: match.id === 11111 ? 8 : match.id === 22222 ? 7 : match.id === 33333 ? 9 : 5,
-        away: match.id === 11111 ? 5 : match.id === 22222 ? 4 : match.id === 33333 ? 3 : 6,
-      },
-      fouls: {
-        home: match.id === 11111 ? 10 : match.id === 22222 ? 8 : match.id === 33333 ? 9 : 12,
-        away: match.id === 11111 ? 12 : match.id === 22222 ? 14 : match.id === 33333 ? 15 : 10,
-      },
-    },
-    manOfTheMatch: match.id === 11111 ? {
-      id: 12345,
-      name: 'Vinicius Jr.',
-      team: 'Real Madrid',
-      imageUrl: null,
-    } : match.id === 22222 ? {
-      id: 23456,
-      name: 'Kevin De Bruyne',
-      team: 'Manchester City',
-      imageUrl: null,
-    } : match.id === 33333 ? {
-      id: 34567,
-      name: 'Mohamed Salah',
-      team: 'Liverpool',
-      imageUrl: null,
-    } : null,
-  };
-};
+// Mock data functions have been removed as we're now using real API data only

@@ -5,15 +5,22 @@ import { useMatchesStore } from '../store/matchesStore';
 import MatchCard from '../components/MatchCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
+import DateFilter from '../components/DateFilter';
 
 export default function MatchesPage() {
-  const { matches, loading, error, fetchMatches } = useMatchesStore();
+  const { matches, loading, error, fetchMatches, selectedDate, setSelectedDate } = useMatchesStore();
   const [currentPage, setCurrentPage] = useState(0);
   const matchesPerPage = 2;
 
   useEffect(() => {
     fetchMatches();
-  }, [fetchMatches]);
+  }, [fetchMatches, selectedDate]);
+
+  // Handle date change
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+    setCurrentPage(0); // Reset to first page when date changes
+  };
 
   // Calculate pagination
   const totalPages = Math.ceil((matches?.length || 0) / matchesPerPage);
@@ -61,8 +68,13 @@ export default function MatchesPage() {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 text-center animate-fadeIn">UEFA Champions League Quarter Finals</h1>
 
+        <DateFilter 
+          selectedDate={selectedDate} 
+          onDateChange={handleDateChange} 
+        />
+
         {matches?.length === 0 ? (
-          <p className="text-center animate-fadeIn">No matches found.</p>
+          <p className="text-center animate-fadeIn">No matches found for this date.</p>
         ) : (
           <>
             <div className="grid grid-cols-1 gap-6 mb-8">

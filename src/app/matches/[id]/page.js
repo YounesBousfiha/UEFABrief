@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMatchesStore } from '../../store/matchesStore';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import Image from "next/image";
 
 export default function MatchDetailsPage({ params }) {
   const router = useRouter();
@@ -191,7 +192,7 @@ export default function MatchDetailsPage({ params }) {
                   <div className="flex items-center space-x-4 mt-4 p-4 bg-secondary/50 rounded-lg transition-all hover:bg-secondary">
                     <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center shadow-md overflow-hidden">
                       {match.manOfTheMatch.imageUrl ? (
-                        <img 
+                        <Image
                           src={match.manOfTheMatch.imageUrl} 
                           alt={match.manOfTheMatch.name} 
                           className="w-full h-full rounded-full object-cover transition-transform hover:scale-110"
@@ -227,7 +228,7 @@ export default function MatchDetailsPage({ params }) {
                     <tbody className="bg-card divide-y divide-border">
                       {match.events.map((event, index) => (
                         <tr key={index} className="transition-colors hover:bg-muted/50">
-                          <td className="px-6 py-4 whitespace-nowrap font-medium">{event.minute || '0'}'</td>
+                          <td className="px-6 py-4 whitespace-nowrap font-medium">{event.minute || '0'}</td>
                           <td className="px-6 py-4 whitespace-nowrap">{event.type || 'Unknown'}</td>
                           <td className="px-6 py-4 whitespace-nowrap">{event.player || 'Unknown'}</td>
                           <td className="px-6 py-4 whitespace-nowrap">{event.team || 'Unknown'}</td>
